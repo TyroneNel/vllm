@@ -307,7 +307,14 @@ def _reshape_attention_kv_cache(
             "kv-first layouts are not supported."
         )
         dtype_size = get_dtype_size(kv_cache_spec.dtype)
-        page_stride = kv_cache_spec.page_size_bytes // dtype_size
+        if kv_cache_spec.kv_quant_mode.is_kvarn:
+            # KVarN stores one packed tile per block/head. Hybrid page
+            # unification may publish a larger logical page (including
+            # num_head_slots), but the physical block stride is the packed
+            # backend shape: one tile for every physical KV head.
+            page_stride = prod(kv_cache_shape[1:])
+        else:
+            page_stride = kv_cache_spec.page_size_bytes // dtype_size
 
         num_blocks_dim = inv_order[0]
         strides = list(torch.empty(permuted_kv_cache_shape, device="meta").stride())
