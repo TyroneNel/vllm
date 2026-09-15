@@ -84,14 +84,17 @@ def _selector_walk_kernel(
             keep = mask & (rank < req_top_k) & (mass_before < req_top_p)
             scores = tl.where(keep, scores, -float("inf"))
 
-        position = tl.load(sample_pos_ptr + flat) - 1
+        # sample_pos is the predicted token's position P. Sampling keys a draw
+        # by the position before the sampled token, P-1.
+        sample_pos = tl.load(sample_pos_ptr + flat) - 1
         _, index = gumbel_noised_argmax(
             scores,
             candidates,
             mask & valid,
             seed,
-            position,
+            sample_pos,
             temperature if SAMPLE_PROBABILISTIC else 0.0,
+            IS_DRAFTING=True,
             USE_FP64=USE_FP64,
         )
         # vLLM 0.28.0's rejection sampler expects pre-temperature logits. With TRUNCATE
