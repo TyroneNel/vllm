@@ -636,6 +636,18 @@ def resolve_kv_cache_block_sizes(
         else g.kv_cache_spec.block_size
         for g in groups
     ]
+    _all_group_block_sizes = list(group_block_sizes)
+    # Sliding-window groups do not participate in prefix matching. Excluding
+    # them keeps their small rolling-window block from skewing the scheduler
+    # LCM and the prefix-hash GCD used by the target group.
+    non_sw = [
+        bs
+        for g, bs in zip(groups, group_block_sizes)
+        if not isinstance(g.kv_cache_spec, SlidingWindowSpec)
+    ]
+    _hash_gcd_all = math.gcd(*_all_group_block_sizes)
+    if non_sw:
+        group_block_sizes = non_sw
     scheduler_block_size = math.lcm(*group_block_sizes)
 
     # Block hashes are only consumed by prefix caching and KV connectors
@@ -648,16 +660,16 @@ def resolve_kv_cache_block_sizes(
     # Mamba groups outside align mode break divisibility; back off to the
     # scheduler block size. Read the mode from the resolved group spec because
     # its block size may have been updated independently of cache_config.
-    if any(
+    if cache_config.prefix_match_unit is None and any(
         isinstance(g.kv_cache_spec, MambaSpec)
         and g.kv_cache_spec.mamba_cache_mode != "align"
         for g in groups
     ):
-        return scheduler_block_size, scheduler_block_size
+        return scheduler_block_size, _hash_gcd_all
 
     requested = cache_config.prefix_match_unit
     hash_block_size = (
-        requested if requested is not None else math.gcd(*group_block_sizes)
+        requested if requested is not None else _hash_gcd_all
     )
     if any(bs % hash_block_size != 0 for bs in group_block_sizes):
         raise ValueError(
