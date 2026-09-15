@@ -233,6 +233,9 @@ if TYPE_CHECKING:
     # torch.compile cache key; VLLM_MARLIN_TUNE changes the Marlin workspace shape)
     VLLM_MARLIN_TUNE: bool = False
     VLLM_MARLIN_TUNE_DIR: str = ""
+    # syv patch: int4 multi-query 3D verify switch and its debug print (same reason)
+    VLLM_INT4_MQ_3D: bool = False
+    VLLM_INT4_MQ_3D_DEBUG: bool = False
     # GiB of vision-tower weights to keep in pinned host memory; 0 disables.
     VLLM_VISION_CPU_OFFLOAD_GB: float = 0.0
     VLLM_HUMMING_MOE_GEMM_TYPE: Literal["indexed", "grouped", "auto"] | None = None
@@ -1616,6 +1619,8 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # syv patch: single-user speed knobs
     "VLLM_MARLIN_TUNE": lambda: os.environ.get("VLLM_MARLIN_TUNE", "0") == "1",
     "VLLM_MARLIN_TUNE_DIR": lambda: os.environ.get("VLLM_MARLIN_TUNE_DIR", ""),
+    "VLLM_INT4_MQ_3D": lambda: os.environ.get("VLLM_INT4_MQ_3D", "0") == "1",
+    "VLLM_INT4_MQ_3D_DEBUG": lambda: os.environ.get("VLLM_INT4_MQ_3D_DEBUG", "0") == "1",
     "VLLM_VISION_CPU_OFFLOAD_GB": lambda: float(
         os.environ.get("VLLM_VISION_CPU_OFFLOAD_GB", "0")
     ),
