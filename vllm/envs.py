@@ -177,6 +177,21 @@ if TYPE_CHECKING:
     VLLM_USE_BREAKABLE_CUDAGRAPH: bool = False
     VLLM_DP_MASTER_IP: str = ""
     VLLM_DP_MASTER_PORT: int = 0
+    # syv patch (dflash2-lookup-drafting): lookup-augmented drafting for DFlash2; registered so they take
+    # part in the torch.compile cache key
+    VLLM_DFLASH2_LOOKUP: bool = False
+    VLLM_DFLASH2_GRAPH_BOTH: bool = True
+    VLLM_DFLASH2_DRAFT_TOPK_TOPP: bool = True
+    VLLM_DFLASH2_LOOKUP_NMIN: int = 6
+    VLLM_DFLASH2_LOOKUP_NMAX: int = 12
+    VLLM_DFLASH2_LOOKUP_NSTRONG: int = 6
+    VLLM_DFLASH2_LOOKUP_AGREE: int = 0
+    VLLM_DFLASH2_LOOKUP_NMIN_TAIL: int = 4
+    VLLM_DFLASH2_LOOKUP_LONGMIN: int = 6
+    VLLM_DFLASH2_LOOKUP_CHEAP_CTX: int = 0
+    VLLM_DFLASH2_LOOKUP_SEARCH: int = 1 << 30
+    VLLM_DFLASH2_LOOKUP_ADAPTIVE: bool = True
+    VLLM_DFLASH2_LOOKUP_STICKY: int = 3
     VLLM_RANDOMIZE_DP_DUMMY_INPUTS: bool = False
     VLLM_RAY_DP_PACK_STRATEGY: Literal["strict", "fill", "span"] = "strict"
     VLLM_RAY_DP_PLACEMENT_NODE_IPS: str = ""
@@ -1477,6 +1492,20 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_DP_MASTER_IP": lambda: os.getenv("VLLM_DP_MASTER_IP", "127.0.0.1"),
     # Port of the master node in the data parallel setting
     "VLLM_DP_MASTER_PORT": lambda: int(os.getenv("VLLM_DP_MASTER_PORT", "0")),
+    # syv patch (dflash2-lookup-drafting)
+    "VLLM_DFLASH2_LOOKUP": lambda: os.environ.get("VLLM_DFLASH2_LOOKUP", "0") == "1",
+    "VLLM_DFLASH2_GRAPH_BOTH": lambda: os.environ.get("VLLM_DFLASH2_GRAPH_BOTH", "1") == "1",
+    "VLLM_DFLASH2_DRAFT_TOPK_TOPP": lambda: os.environ.get("VLLM_DFLASH2_DRAFT_TOPK_TOPP", "1") == "1",
+    "VLLM_DFLASH2_LOOKUP_NMIN": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_NMIN", "6")),
+    "VLLM_DFLASH2_LOOKUP_NMAX": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_NMAX", "12")),
+    "VLLM_DFLASH2_LOOKUP_NSTRONG": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_NSTRONG", "6")),
+    "VLLM_DFLASH2_LOOKUP_AGREE": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_AGREE", "0")),
+    "VLLM_DFLASH2_LOOKUP_NMIN_TAIL": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_NMIN_TAIL", "4")),
+    "VLLM_DFLASH2_LOOKUP_LONGMIN": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_LONGMIN", "6")),
+    "VLLM_DFLASH2_LOOKUP_CHEAP_CTX": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_CHEAP_CTX", "0")),
+    "VLLM_DFLASH2_LOOKUP_SEARCH": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_SEARCH", str(1 << 30))),
+    "VLLM_DFLASH2_LOOKUP_ADAPTIVE": lambda: os.environ.get("VLLM_DFLASH2_LOOKUP_ADAPTIVE", "1") == "1",
+    "VLLM_DFLASH2_LOOKUP_STICKY": lambda: int(os.environ.get("VLLM_DFLASH2_LOOKUP_STICKY", "3")),
     # Randomize inputs during dummy runs when using Data Parallel
     "VLLM_RANDOMIZE_DP_DUMMY_INPUTS": lambda: (
         os.environ.get("VLLM_RANDOMIZE_DP_DUMMY_INPUTS", "0") == "1"
