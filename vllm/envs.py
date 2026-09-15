@@ -206,6 +206,8 @@ if TYPE_CHECKING:
     VLLM_MARLIN_INPUT_DTYPE: Literal["int8", "fp8"] | None = None
     VLLM_MARLIN_INT8_INCLUDE_RE: str = ""
     VLLM_MARLIN_INT8_EXCLUDE_RE: str = "lm_head|mtp"
+    # syv patch (prefill-attn-int8): "int8" / "fp16" selects the Triton prefill kernel on the hybrid model
+    VLLM_PREFILL_ATTN: str = ""
     # syv patch (marlin-repack-staged-sm80): "1"/"0" override of the staging buffer, unset = on for sm80 only
     VLLM_MARLIN_REPACK_STAGED: str | None = None
     # syv patch (hybrid-kv-groups-v2-cudagraph): MiB reserved for V2 CUDA graphs before the KV cache is sized
@@ -1583,6 +1585,8 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_MARLIN_INT8_EXCLUDE_RE": lambda: os.environ.get(
         "VLLM_MARLIN_INT8_EXCLUDE_RE", "lm_head|mtp"
     ),
+    # syv patch (prefill-attn-int8)
+    "VLLM_PREFILL_ATTN": lambda: os.environ.get("VLLM_PREFILL_ATTN", ""),
     # syv patch (marlin-repack-staged-sm80)
     "VLLM_MARLIN_REPACK_STAGED": lambda: os.environ.get("VLLM_MARLIN_REPACK_STAGED"),
     # syv patch (hybrid-kv-groups-v2-cudagraph)
