@@ -201,6 +201,8 @@ if TYPE_CHECKING:
     VLLM_MARLIN_INPUT_DTYPE: Literal["int8", "fp8"] | None = None
     VLLM_MARLIN_INT8_INCLUDE_RE: str = ""
     VLLM_MARLIN_INT8_EXCLUDE_RE: str = "lm_head|mtp"
+    # syv patch (marlin-repack-staged-sm80): "1"/"0" override of the staging buffer, unset = on for sm80 only
+    VLLM_MARLIN_REPACK_STAGED: str | None = None
     # syv patch (hybrid-kv-groups-v2-cudagraph): MiB reserved for V2 CUDA graphs before the KV cache is sized
     VLLM_V2_CUDAGRAPH_MEM_MIB: float = 0.0
     # syv patch (spec-decode-attn): split-KV verify kernel switch, query-token cap for its partial buffers
@@ -1571,6 +1573,8 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_MARLIN_INT8_EXCLUDE_RE": lambda: os.environ.get(
         "VLLM_MARLIN_INT8_EXCLUDE_RE", "lm_head|mtp"
     ),
+    # syv patch (marlin-repack-staged-sm80)
+    "VLLM_MARLIN_REPACK_STAGED": lambda: os.environ.get("VLLM_MARLIN_REPACK_STAGED"),
     # syv patch (hybrid-kv-groups-v2-cudagraph)
     "VLLM_V2_CUDAGRAPH_MEM_MIB": lambda: float(os.environ.get("VLLM_V2_CUDAGRAPH_MEM_MIB", "0") or 0),
     # syv patch (spec-decode-attn)
