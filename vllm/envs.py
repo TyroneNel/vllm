@@ -199,6 +199,10 @@ if TYPE_CHECKING:
     VLLM_HUMMING_ONLINE_QUANT_CONFIG: dict[str, Any] | None = None
     VLLM_HUMMING_INPUT_QUANT_CONFIG: dict[str, Any] | None = None
     VLLM_HUMMING_USE_F16_ACCUM: bool = False
+    # syv patch: single-user speed knobs (registered so they take part in the
+    # torch.compile cache key; VLLM_MARLIN_TUNE changes the Marlin workspace shape)
+    VLLM_MARLIN_TUNE: bool = False
+    VLLM_MARLIN_TUNE_DIR: str = ""
     VLLM_HUMMING_MOE_GEMM_TYPE: Literal["indexed", "grouped", "auto"] | None = None
     VLLM_DEEPEPLL_NVFP4_DISPATCH: bool = False
     VLLM_V1_USE_OUTLINES_CACHE: bool = False
@@ -1545,6 +1549,9 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_HUMMING_ONLINE_QUANT_CONFIG": lambda: maybe_convert_json_str_or_file(
         os.environ.get("VLLM_HUMMING_ONLINE_QUANT_CONFIG", None)
     ),
+    # syv patch: single-user speed knobs
+    "VLLM_MARLIN_TUNE": lambda: os.environ.get("VLLM_MARLIN_TUNE", "0") == "1",
+    "VLLM_MARLIN_TUNE_DIR": lambda: os.environ.get("VLLM_MARLIN_TUNE_DIR", ""),
     # The activation dtype config for humming kernel
     "VLLM_HUMMING_INPUT_QUANT_CONFIG": lambda: maybe_convert_json_str_or_file(
         os.environ.get("VLLM_HUMMING_INPUT_QUANT_CONFIG", None)
