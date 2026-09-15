@@ -177,6 +177,11 @@ if TYPE_CHECKING:
     VLLM_USE_BREAKABLE_CUDAGRAPH: bool = False
     VLLM_DP_MASTER_IP: str = ""
     VLLM_DP_MASTER_PORT: int = 0
+    # syv patch (dflash2-ngram-chains): drafter-free candidate chains; same cache-key reason
+    VLLM_DFLASH2_CHAIN: bool = False
+    VLLM_DFLASH2_CHAIN_MINMATCH: int = 8
+    VLLM_DFLASH2_CHAIN_LOG_SEC: float = 30.0
+    VLLM_DFLASH2_CHAIN_GREEDY_ONLY: bool = True
     # syv patch (dflash2-lookup-drafting): lookup-augmented drafting for DFlash2; registered so they take
     # part in the torch.compile cache key
     VLLM_DFLASH2_LOOKUP: bool = False
@@ -1496,6 +1501,11 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_DP_MASTER_IP": lambda: os.getenv("VLLM_DP_MASTER_IP", "127.0.0.1"),
     # Port of the master node in the data parallel setting
     "VLLM_DP_MASTER_PORT": lambda: int(os.getenv("VLLM_DP_MASTER_PORT", "0")),
+    # syv patch (dflash2-ngram-chains)
+    "VLLM_DFLASH2_CHAIN": lambda: os.environ.get("VLLM_DFLASH2_CHAIN", "0") == "1",
+    "VLLM_DFLASH2_CHAIN_MINMATCH": lambda: int(os.environ.get("VLLM_DFLASH2_CHAIN_MINMATCH", "8")),
+    "VLLM_DFLASH2_CHAIN_LOG_SEC": lambda: float(os.environ.get("VLLM_DFLASH2_CHAIN_LOG_SEC", "30")),
+    "VLLM_DFLASH2_CHAIN_GREEDY_ONLY": lambda: os.environ.get("VLLM_DFLASH2_CHAIN_GREEDY_ONLY", "1") == "1",
     # syv patch (dflash2-lookup-drafting)
     "VLLM_DFLASH2_LOOKUP": lambda: os.environ.get("VLLM_DFLASH2_LOOKUP", "0") == "1",
     "VLLM_DFLASH2_GRAPH_BOTH": lambda: os.environ.get("VLLM_DFLASH2_GRAPH_BOTH", "1") == "1",
