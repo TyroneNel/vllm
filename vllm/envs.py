@@ -186,6 +186,10 @@ if TYPE_CHECKING:
     VLLM_MARLIN_INPUT_DTYPE: Literal["int8", "fp8"] | None = None
     VLLM_MARLIN_INT8_INCLUDE_RE: str = ""
     VLLM_MARLIN_INT8_EXCLUDE_RE: str = "lm_head|mtp"
+    # syv patch (sampler-small-topk-fast-softmax): draft-side top-k/top-p truncation and temperature scale,
+    # read once at import; registered so they take part in the torch.compile cache key
+    VLLM_DRAFT_TOPK_TOPP: bool = True
+    VLLM_DRAFT_TEMP_SCALE: float = 1.0
     VLLM_HUMMING_ONLINE_QUANT_CONFIG: dict[str, Any] | None = None
     VLLM_HUMMING_INPUT_QUANT_CONFIG: dict[str, Any] | None = None
     VLLM_HUMMING_USE_F16_ACCUM: bool = False
@@ -1524,6 +1528,9 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_MARLIN_INT8_EXCLUDE_RE": lambda: os.environ.get(
         "VLLM_MARLIN_INT8_EXCLUDE_RE", "lm_head|mtp"
     ),
+    # syv patch (sampler-small-topk-fast-softmax)
+    "VLLM_DRAFT_TOPK_TOPP": lambda: os.environ.get("VLLM_DRAFT_TOPK_TOPP", "1") == "1",
+    "VLLM_DRAFT_TEMP_SCALE": lambda: float(os.environ.get("VLLM_DRAFT_TEMP_SCALE", "1.0")),
     # The online quantization dtype for humming kernel
     "VLLM_HUMMING_ONLINE_QUANT_CONFIG": lambda: maybe_convert_json_str_or_file(
         os.environ.get("VLLM_HUMMING_ONLINE_QUANT_CONFIG", None)
