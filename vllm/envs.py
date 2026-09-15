@@ -186,6 +186,12 @@ if TYPE_CHECKING:
     VLLM_MARLIN_INPUT_DTYPE: Literal["int8", "fp8"] | None = None
     VLLM_MARLIN_INT8_INCLUDE_RE: str = ""
     VLLM_MARLIN_INT8_EXCLUDE_RE: str = "lm_head|mtp"
+    # syv patch (spec-decode-attn): split-KV verify kernel switch, query-token cap for its partial buffers
+    # (0 = 1 + num_speculative_tokens) and a forced query-row tile (0 = pick by row count); registered so
+    # they take part in the torch.compile cache key (both change the kernel launch)
+    VLLM_SPEC_DECODE_ATTN: bool = False
+    VLLM_SPEC_DECODE_ATTN_QMAX: int = 0
+    VLLM_SPEC_ATTN_BLOCK_M: int = 0
     # syv patch (sampler-small-topk-fast-softmax): draft-side top-k/top-p truncation and temperature scale,
     # read once at import; registered so they take part in the torch.compile cache key
     VLLM_DRAFT_TOPK_TOPP: bool = True
@@ -1528,6 +1534,10 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "VLLM_MARLIN_INT8_EXCLUDE_RE": lambda: os.environ.get(
         "VLLM_MARLIN_INT8_EXCLUDE_RE", "lm_head|mtp"
     ),
+    # syv patch (spec-decode-attn)
+    "VLLM_SPEC_DECODE_ATTN": lambda: os.environ.get("VLLM_SPEC_DECODE_ATTN", "0") == "1",
+    "VLLM_SPEC_DECODE_ATTN_QMAX": lambda: int(os.environ.get("VLLM_SPEC_DECODE_ATTN_QMAX") or 0),
+    "VLLM_SPEC_ATTN_BLOCK_M": lambda: int(os.environ.get("VLLM_SPEC_ATTN_BLOCK_M") or 0),
     # syv patch (sampler-small-topk-fast-softmax)
     "VLLM_DRAFT_TOPK_TOPP": lambda: os.environ.get("VLLM_DRAFT_TOPK_TOPP", "1") == "1",
     "VLLM_DRAFT_TEMP_SCALE": lambda: float(os.environ.get("VLLM_DRAFT_TEMP_SCALE", "1.0")),
