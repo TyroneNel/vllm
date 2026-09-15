@@ -338,7 +338,24 @@ def _reshape_attention_kv_cache(
         )
     else:
         # No padding — safe to use a contiguous view.
-        kv_cache = kv_raw_tensor.view(dtype).view(permuted_kv_cache_shape)
+        needed = prod(permuted_kv_cache_shape)
+        if (
+            kv_cache_spec.kv_quant_mode.is_per_token_head
+            and kv_raw_tensor.numel() > needed
+            and kv_raw_tensor.numel() % permuted_kv_cache_shape[0] == 0
+            and needed % permuted_kv_cache_shape[0] == 0
+        ):
+            nb = permuted_kv_cache_shape[0]
+            raw_per_blk = kv_raw_tensor.numel() // nb
+            want_per_blk = needed // nb
+            kv_cache = (
+                kv_raw_tensor.view(nb, raw_per_blk)
+                .narrow(1, 0, want_per_blk)
+                .reshape(permuted_kv_cache_shape)
+                .view(dtype)
+            )
+        else:
+            kv_cache = kv_raw_tensor.view(dtype).view(permuted_kv_cache_shape)
 
     return kv_cache.permute(*inv_order)
 
