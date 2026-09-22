@@ -24,7 +24,13 @@ from vllm.utils.gc_utils import freeze_gc_heap
 logger = init_logger("vllm.entrypoints.openai.server_utils")
 
 
-GUARDED_PREFIX = ("/v1", "/v2", "/inference", "/cohere")
+# Paths that answer without the API key: the liveness/readiness probes and
+# the load/version endpoints. Everything else on the app -- inference routes,
+# /tokenize (it renders arbitrary text through the chat template), /metrics,
+# the docs -- requires a bearer token, so a route added tomorrow is guarded
+# by default instead of staying open until someone extends a prefix list.
+# Scrapers that cannot carry the key belong on a separate listener, not here.
+UNGUARDED_PATHS = frozenset({"/health", "/ping", "/load", "/version"})
 
 
 class AuthenticationMiddleware:
@@ -36,7 +42,8 @@ class AuthenticationMiddleware:
     -----
     There are two cases in which authentication is skipped:
         1. The HTTP method is OPTIONS.
-        2. The request path doesn't start with GUARDED_PREFIX (e.g. /health).
+        2. The request path, ignoring a trailing slash, is one of
+           UNGUARDED_PATHS (e.g. /health).
     """
 
     def __init__(self, app: ASGIApp, tokens: list[str]) -> None:
@@ -70,9 +77,14 @@ class AuthenticationMiddleware:
             return self.app(scope, receive, send)
         root_path = scope.get("root_path", "")
         url_path = scope["path"].removeprefix(root_path)
+        # This middleware runs ahead of the router, so a path that differs from
+        # an allowlisted one only by a trailing slash never reaches FastAPI's
+        # redirect_slashes: match on the normalized path, or a liveness probe
+        # configured as /health/ is answered with 401.
+        probe_path = url_path.rstrip("/") or "/"
         headers = Headers(scope=scope)
         # Type narrow to satisfy mypy.
-        if url_path.startswith(GUARDED_PREFIX) and not self.verify_token(headers):
+        if probe_path not in UNGUARDED_PATHS and not self.verify_token(headers):
             response = JSONResponse(content={"error": "Unauthorized"}, status_code=401)
             return response(scope, receive, send)
         return self.app(scope, receive, send)
